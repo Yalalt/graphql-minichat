@@ -6,6 +6,12 @@ import LoginForm from "./components/login-form";
 import NavBar from "./components/navbar";
 import { clientApollo } from "./graphql/query";
 
+// Load Dev message
+import { loadDevMessages, loadErrorMessages } from "@apollo/client/dev";
+
+loadDevMessages();
+loadErrorMessages();
+
 function App() {
   const [loggedUser, setLoggedUser] = useState(getLoggedUserFromToken());
 
