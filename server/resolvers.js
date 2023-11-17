@@ -17,6 +17,7 @@ export const resolvers = {
     // Клиент шинээр мэссэж бичих бүрт энэ resolver дуудагдаж мэссэжийг Sqlite базд бичнэ.
     addMessage: (_root, { text }, { user }) => {
       if (!user) throwUnauthenicated();
+
       const newMessage = createMessage(user, text);
       pubsub.publish('CHAT_RECEIVED', { messageAdded: newMessage });
       return newMessage;
@@ -27,7 +28,13 @@ export const resolvers = {
   Subscription: {
     messageAdded: {
       // Async iterator return
-      subscribe: () => pubsub.asyncIterator('CHAT_RECEIVED'),
+      subscribe: (_root, _args, { user }) => {
+        console.log('wsServer(): websocket...> return payload { context.user: ', user, " }");
+        
+        if (!user) throwUnauthenicated();
+
+        return pubsub.asyncIterator('CHAT_RECEIVED');
+      }
     },
   },
 };
