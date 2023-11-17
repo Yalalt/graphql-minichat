@@ -1,12 +1,33 @@
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery, useSubscription } from '@apollo/client';
 import MessageInput from './message-input';
 import MessageList from './message-list';
-import { ADD_MESSAGE, GET_MESSAGES } from '../graphql/query';
+import { ADD_MESSAGE, ADD_MESSAGE_SUBSCRIPTION, GET_MESSAGES } from '../graphql/query';
 
 function Chat({ loggedUser }) {
   // Сэрвэрээс бүх мэссэжүүдийг data.messages дээр авчирна.
   const { data } = useQuery(GET_MESSAGES);
   const messages = data?.messages ?? [];
+
+  // AddMessage event-д бүртгүүлэх, ирсэн хариултыг хүлээж авах
+  // AddMessage event register, and here also receive response notification from GraphQL server
+  useSubscription(ADD_MESSAGE_SUBSCRIPTION, {
+    onData: ({ client, data }) => {
+      console.log('Ирсэн мэссэж: ', data);
+
+      const newMessage = data.data.message;
+
+      // Update cache
+      client.cache.updateQuery(
+        {
+          query: GET_MESSAGES,
+        },
+        (oldCache) => {
+          return { messages: [...oldCache.messages, newMessage] };
+        }
+      );
+    },
+  });
+
   // Сэрвэр рүү шинэ чат мэссэжийг илгээх функцийг гаргаж авах
   const [mutate] = useMutation(ADD_MESSAGE);
 
@@ -15,17 +36,6 @@ function Chat({ loggedUser }) {
     // Сэрвэр рүү чат илгээх mutate функцийг дуудаад
     const { data } = await mutate({
       variables: { text },
-      update: (cache, { data }) => {
-        const newMessage = data.message;
-        cache.updateQuery(
-          {
-            query: GET_MESSAGES,
-          },
-          (oldCache) => {
-            return { messages: [...oldCache.messages, newMessage] };
-          }
-        );
-      },
     });
     return data;
   };
