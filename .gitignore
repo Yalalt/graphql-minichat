@@ -46,6 +46,7 @@ client/jspm_packages/
 server/node_modules/
 server/jspm_packages/
 server/data/*.sqlite
+server/data/mydb.sqlite
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
