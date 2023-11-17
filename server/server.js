@@ -3,7 +3,7 @@ import { expressMiddleware as apolloExpressMiddleware } from '@apollo/server/exp
 import cors from 'cors';
 import express from 'express';
 import { readFile } from 'node:fs/promises';
-import { authenticationMiddleware, handleLogin } from './authentication.js';
+import { authenticationMiddleware, decodeToken, handleLogin } from './authentication.js';
 import { resolvers } from './resolvers.js';
 
 import { createServer } from 'http';
@@ -38,7 +38,24 @@ const wsServer = new WebSocketServer({
 });
 
 // WebSocket Server listening
-const serverCleanup = useWsServer({ schema }, wsServer);
+const serverCleanup = useWsServer(
+  {
+    schema,
+    context: ({ connectionParams }) => {
+      // console.log('connectionParams: ', connectionParams);
+
+      const accessToken = connectionParams?.accessToken;
+      if (accessToken) {
+        const payload = decodeToken(accessToken);
+        // console.log('payload: ', payload);
+
+        return { user: payload.sub };
+      }
+      return {};
+    },
+  },
+  wsServer
+);
 
 // Аполло сэрвэрийг бэлтгэх
 const apolloServer = new ApolloServer({
@@ -84,4 +101,3 @@ httpServer.listen({ port: PORT }, () => {
   console.log(`Apollo graphql ЧАТ сэрвэр: http://localhost:${PORT}/graphql`);
   console.log(`WebSocket ЧАТ сэрвэр: ws://localhost:${PORT}/graphql`);
 });
-
