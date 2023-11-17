@@ -12,6 +12,10 @@ export const authenticationMiddleware = expressjwt({
   credentialsRequired: false,
 });
 
+export const decodeToken = (token) => {
+  return jwt.decode(token, secret);
+}
+
 export async function handleLogin(req, res) {
   // хэрэглэгчийн нэр, password салгаж авах
   const { username, password } = req.body;
