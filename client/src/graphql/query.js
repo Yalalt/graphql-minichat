@@ -19,22 +19,22 @@ const queryMutationLink = concat(authenticationLink, createHttpLink({ uri: 'http
 const wsLink = new GraphQLWsLink(
   createWsClient({
     url: 'ws://localhost:9001/graphql',
+    connectionParams: () => ({
+      accessToken: localStorage.getItem('chat_app_token'),
+    })
   })
 );
+
+function isSubscription(operation) {
+  const definition = getMainDefinition(operation.query);
+
+  return definition.kind === Kind.OPERATION_DEFINITION && definition.operation === OperationTypeNode.SUBSCRIPTION;
+}
 
 export const clientApollo = new ApolloClient({
   link: split(isSubscription, wsLink, queryMutationLink),
   cache: new InMemoryCache(),
 });
-
-function isSubscription(operation) {
-  const definition = getMainDefinition(operation.query);
-
-  return (
-    definition.kind === Kind.OPERATION_DEFINITION && 
-    definition.operation === OperationTypeNode.SUBSCRIPTION
-  );
-}
 
 export const GET_MESSAGES = gql`
   query MessagesQuery {
@@ -49,6 +49,16 @@ export const GET_MESSAGES = gql`
 export const ADD_MESSAGE = gql`
   mutation AddMessageMutation($text: String!) {
     message: addMessage(text: $text) {
+      id
+      user
+      text
+    }
+  }
+`;
+
+export const ADD_MESSAGE_SUBSCRIPTION = gql`
+  subscription MessageAddedSubscription {
+    message: messageAdded {
       id
       user
       text
